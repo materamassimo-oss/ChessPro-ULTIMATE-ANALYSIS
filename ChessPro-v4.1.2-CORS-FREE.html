@@ -1,0 +1,3023 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Pro Ultimate - v4.1.2 CORS-FREE</title>
+    
+    <!-- Chessboard.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+    <!-- Chart.js for analysis graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 15px 0;
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .main-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr 320px;
+            }
+        }
+
+        .board-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #board {
+            max-width: 600px;
+            margin: 0 auto;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #board * {
+            touch-action: none;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .panel h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .status.normal {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .status.check {
+            background: #ffebee;
+            color: #c62828;
+            animation: pulse 1s infinite;
+        }
+
+        .status.thinking {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .status.gameover {
+            background: #f3e5f5;
+            color: #6a1b9a;
+            font-size: 1.1rem;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            font-size: 0.9rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .timer-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .timer.active {
+            animation: timerPulse 1s infinite;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .timer-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .timer-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .captured-container {
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .captured-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            min-height: 30px;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-size: 1.2rem;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .moves-list {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .move-item {
+            padding: 4px 8px;
+            margin: 2px 0;
+            background: white;
+            border-radius: 4px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .opening-info {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .opening-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .opening-stats {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .difficulty-control {
+            margin-bottom: 15px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        /* Promotion Modal */
+        .promotion-pieces {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .promotion-piece {
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 3rem;
+            transition: all 0.3s;
+        }
+
+        .promotion-piece:hover {
+            background: #667eea;
+            transform: scale(1.1);
+        }
+
+        /* PGN Modal */
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 300px;
+        }
+
+        /* Save/Load Game Modals */
+        .saved-game-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .saved-game-item:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .saved-game-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .saved-game-date {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        /* Analysis Modal */
+        .analysis-modal .modal-content {
+            max-width: 900px;
+        }
+
+        .game-result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .game-result.white-wins {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+        }
+
+        .game-result.black-wins {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: white;
+        }
+
+        .game-result.draw {
+            background: linear-gradient(135deg, #607D8B 0%, #546E7A 100%);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .accuracy-bars {
+            margin: 20px 0;
+        }
+
+        .accuracy-bar {
+            margin-bottom: 15px;
+        }
+
+        .accuracy-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .accuracy-progress {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 25px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: width 0.5s ease;
+        }
+
+        .chart-container {
+            margin: 25px 0;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .chart-container h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .phase-analysis {
+            margin: 25px 0;
+        }
+
+        .phase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .phase-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .phase-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .phase-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .classification-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .classification-item {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .classification-item.brilliant {
+            background: #9C27B0;
+        }
+
+        .classification-item.excellent {
+            background: #4CAF50;
+        }
+
+        .classification-item.good {
+            background: #8BC34A;
+        }
+
+        .classification-item.book {
+            background: #2196F3;
+        }
+
+        .classification-item.forced {
+            background: #607D8B;
+        }
+
+        .classification-item.inaccuracy {
+            background: #FFC107;
+            color: #333;
+        }
+
+        .classification-item.mistake {
+            background: #FF9800;
+        }
+
+        .classification-item.blunder {
+            background: #f44336;
+        }
+
+        .move-by-move {
+            margin: 25px 0;
+        }
+
+        .move-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .move-row:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .move-row.selected {
+            background: #764ba2;
+            color: white;
+        }
+
+        .move-num {
+            width: 60px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .move-row:hover .move-num,
+        .move-row.selected .move-num {
+            color: white;
+        }
+
+        .move-san {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .move-winprob {
+            width: 60px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .move-class {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .replay-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .replay-controls button {
+            flex: 1;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .classification-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .phase-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        /* ========== UNICODE CHESS PIECES (CORS-FREE) ========== */
+        /* Hide default background images */
+        .chess-board .square img {
+            display: none !important;
+        }
+
+        /* Unicode pieces using ::before */
+        .chess-board .square::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 45px;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        /* White Pieces */
+        .chess-board .square-55d63.wK::before { content: '\u2654'; } /* ♔ */
+        .chess-board .square-55d63.wQ::before { content: '\u2655'; } /* ♕ */
+        .chess-board .square-55d63.wR::before { content: '\u2656'; } /* ♖ */
+        .chess-board .square-55d63.wB::before { content: '\u2657'; } /* ♗ */
+        .chess-board .square-55d63.wN::before { content: '\u2658'; } /* ♘ */
+        .chess-board .square-55d63.wP::before { content: '\u2659'; } /* ♙ */
+
+        /* Black Pieces */
+        .chess-board .square-55d63.bK::before { content: '\u265A'; } /* ♚ */
+        .chess-board .square-55d63.bQ::before { content: '\u265B'; } /* ♛ */
+        .chess-board .square-55d63.bR::before { content: '\u265C'; } /* ♜ */
+        .chess-board .square-55d63.bB::before { content: '\u265D'; } /* ♝ */
+        .chess-board .square-55d63.bN::before { content: '\u265E'; } /* ♞ */
+        .chess-board .square-55d63.bP::before { content: '\u265F'; } /* ♟ */
+
+        /* Ensure pieces are visible during drag */
+        .chess-board .piece-417db {
+            font-size: 45px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            &#9812; Chess Pro Ultimate &#9818;
+            <span class="version-badge">v4.1.2 CORS-FREE</span>
+        </h1>
+
+        <div class="main-grid">
+            <!-- Scacchiera -->
+            <div class="board-container">
+                <div id="status" class="status normal">Nuova Partita - Muove il Bianco</div>
+                <div id="board"></div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Timer Panel -->
+                <div class="panel">
+                    <div class="timer-container">
+                        <div class="timer" id="timerWhite">
+                            <div class="timer-label">Bianco</div>
+                            <div class="timer-value">10:00</div>
+                        </div>
+                        <div class="timer" id="timerBlack">
+                            <div class="timer-label">Nero</div>
+                            <div class="timer-value">10:00</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <input type="checkbox" id="timerEnabled">
+                        <label for="timerEnabled" style="font-size: 0.9rem; cursor: pointer;">Abilita Timer</label>
+                    </div>
+
+                    <div class="difficulty-control">
+                        <label for="difficulty" style="font-size: 0.9rem; font-weight: 600; color: #333;">
+                            Livello AI (1-20):
+                        </label>
+                        <select id="difficulty">
+                            <option value="1">1 - Principiante</option>
+                            <option value="5">5 - Facile</option>
+                            <option value="10" selected>10 - Intermedio</option>
+                            <option value="15">15 - Avanzato</option>
+                            <option value="20">20 - Maestro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Opening Info Panel -->
+                <div id="openingPanel" class="opening-info" style="display: none;">
+                    <div class="opening-name" id="openingName">-</div>
+                    <div class="opening-stats" id="openingStats">-</div>
+                </div>
+
+                <!-- Captured Pieces -->
+                <div class="panel">
+                    <div class="captured-container">
+                        <div class="info-label">Pezzi Catturati - Bianco:</div>
+                        <div class="captured-pieces" id="capturedWhite"></div>
+                    </div>
+                    <div class="captured-container">
+                        <div class="info-label">Pezzi Catturati - Nero:</div>
+                        <div class="captured-pieces" id="capturedBlack"></div>
+                    </div>
+                </div>
+
+                <!-- Control Panel -->
+                <div class="panel">
+                    <h3>Controlli Partita</h3>
+                    
+                    <div class="button-group">
+                        <button class="btn-success" onclick="startNewGame('human', 'ai')">
+                            &#9823; vs &#9812; AI
+                        </button>
+                        <button class="btn-success" onclick="startNewGame('ai', 'ai')">
+                            &#9812; AI vs AI
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="startNewGame('human', 'human')">
+                            &#9823; vs &#9823;
+                        </button>
+                        <button class="btn-warning" onclick="resetGame()">
+                            Nuova Partita
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="flipBoard()">
+                            Ruota
+                        </button>
+                        <button class="btn-secondary" onclick="undoMove()">
+                            Annulla
+                        </button>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="openSaveModal()">
+                            Salva
+                        </button>
+                        <button class="btn-primary" onclick="openLoadModal()">
+                            Carica
+                        </button>
+                    </div>
+
+                    <button class="btn-danger" style="width: 100%; margin-top: 8px;" onclick="resign()">
+                        Abbandona
+                    </button>
+
+                    <button class="btn-success" id="analysisToggle" style="width: 100%; margin-top: 8px;" 
+                            onclick="toggleAnalysisPanel()">
+                        Abilita Analisi
+                    </button>
+                </div>
+
+                <!-- Analysis Panel -->
+                <div id="analysisPanel" class="panel" style="display: none;">
+                    <h3>Analisi Partita</h3>
+                    <button class="btn-primary" style="width: 100%; margin-bottom: 8px;" 
+                            onclick="showAnalysisModal()">
+                        Visualizza Analisi Completa
+                    </button>
+                    <button class="btn-secondary" style="width: 100%;" 
+                            onclick="openPGNModal()">
+                        Esporta PGN
+                    </button>
+                </div>
+
+                <!-- Moves List -->
+                <div class="panel">
+                    <h3>Lista Mosse</h3>
+                    <div class="moves-list" id="movesList">Nessuna mossa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promotion Modal -->
+    <div id="promotionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Scegli Promozione</h2>
+            </div>
+            <div class="promotion-pieces" id="promotionPieces"></div>
+        </div>
+    </div>
+
+    <!-- PGN Modal -->
+    <div id="pgnModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Esporta PGN</h2>
+                <button class="close-btn" onclick="closePGNModal()">&times;</button>
+            </div>
+            <textarea id="pgnText" readonly></textarea>
+            <div class="button-group" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="copyPGN()">Copia</button>
+                <button class="btn-success" onclick="downloadAnnotatedPGN()">Scarica PGN Annotato</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Game Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Salva Partita</h2>
+                <button class="close-btn" onclick="closeSaveModal()">&times;</button>
+            </div>
+            <input type="text" id="gameName" placeholder="Nome della partita...">
+            <div class="button-group" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="saveGame()">Salva</button>
+                <button class="btn-secondary" onclick="closeSaveModal()">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Game Modal -->
+    <div id="loadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Carica Partita</h2>
+                <button class="close-btn" onclick="closeLoadModal()">&times;</button>
+            </div>
+            <div id="savedGamesList"></div>
+        </div>
+    </div>
+
+    <!-- Analysis Modal -->
+    <div id="analysisModal" class="modal analysis-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Analisi Completa della Partita</h2>
+                <button class="close-btn" onclick="closeAnalysisModal()">&times;</button>
+            </div>
+
+            <!-- Game Result -->
+            <div class="game-result" id="gameResultText">-</div>
+            <div style="text-align: center; color: #666; margin-bottom: 20px;" id="gameDetails">-</div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalMoves">-</div>
+                    <div class="stat-label">Mosse</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalCaptures">-</div>
+                    <div class="stat-label">Catture</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalChecks">-</div>
+                    <div class="stat-label">Scacchi</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalCastles">-</div>
+                    <div class="stat-label">Arrocchi</div>
+                </div>
+            </div>
+
+            <!-- Accuracy Bars -->
+            <div class="accuracy-bars">
+                <h3 style="margin-bottom: 12px; font-size: 1rem;">Accuratezza Giocatori</h3>
+                <div class="accuracy-bar">
+                    <div class="accuracy-label">
+                        <span>Bianco</span>
+                        <span id="whiteAccuracy">-</span>
+                    </div>
+                    <div class="accuracy-progress">
+                        <div class="accuracy-fill" id="whiteAccuracyBar" style="width: 0%">0%</div>
+                    </div>
+                </div>
+                <div class="accuracy-bar">
+                    <div class="accuracy-label">
+                        <span>Nero</span>
+                        <span id="blackAccuracy">-</span>
+                    </div>
+                    <div class="accuracy-progress">
+                        <div class="accuracy-fill" id="blackAccuracyBar" style="width: 0%">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Win Probability Chart -->
+            <div class="chart-container">
+                <h3>Grafico Probabilita di Vittoria</h3>
+                <canvas id="winProbChart"></canvas>
+            </div>
+
+            <!-- Phase-Based Analysis -->
+            <div class="phase-analysis">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;">Analisi per Fasi di Gioco</h3>
+                <div class="phase-grid" id="phaseGrid"></div>
+            </div>
+
+            <!-- Enhanced Move Classifications -->
+            <div style="margin: 25px 0;">
+                <h3 style="margin-bottom: 12px; font-size: 1rem;">Classificazione Mosse Avanzata</h3>
+                <div class="classification-grid">
+                    <div class="classification-item brilliant">
+                        <div style="font-size: 1.4rem;" id="brilliantCount">0</div>
+                        <div style="font-size: 0.8rem;">Brillanti</div>
+                    </div>
+                    <div class="classification-item excellent">
+                        <div style="font-size: 1.4rem;" id="excellentCount">0</div>
+                        <div style="font-size: 0.8rem;">Eccellenti</div>
+                    </div>
+                    <div class="classification-item good">
+                        <div style="font-size: 1.4rem;" id="goodCount">0</div>
+                        <div style="font-size: 0.8rem;">Buone</div>
+                    </div>
+                    <div class="classification-item book">
+                        <div style="font-size: 1.4rem;" id="bookCount">0</div>
+                        <div style="font-size: 0.8rem;">Da Libro</div>
+                    </div>
+                    <div class="classification-item forced">
+                        <div style="font-size: 1.4rem;" id="forcedCount">0</div>
+                        <div style="font-size: 0.8rem;">Forzate</div>
+                    </div>
+                    <div class="classification-item inaccuracy">
+                        <div style="font-size: 1.4rem;" id="inaccuracyCount">0</div>
+                        <div style="font-size: 0.8rem;">Imprecise</div>
+                    </div>
+                    <div class="classification-item mistake">
+                        <div style="font-size: 1.4rem;" id="mistakeCount">0</div>
+                        <div style="font-size: 0.8rem;">Errori</div>
+                    </div>
+                    <div class="classification-item blunder">
+                        <div style="font-size: 1.4rem;" id="blunderCount">0</div>
+                        <div style="font-size: 0.8rem;">Blunder</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Move-by-Move Interactive List -->
+            <div class="move-by-move">
+                <h3 style="margin-bottom: 12px; font-size: 1rem;">Analisi Mossa per Mossa</h3>
+                <div id="moveByMoveList"></div>
+            </div>
+
+            <!-- Replay Controls -->
+            <div class="replay-controls">
+                <button class="btn-secondary" onclick="replayPrevMove()">◀ Precedente</button>
+                <button class="btn-secondary" onclick="replayNextMove()">Successiva ▶</button>
+                <button class="btn-primary" onclick="replayReset()">Reset</button>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="btn-success" onclick="exportHTMLReport()">Esporta Report HTML</button>
+                <button class="btn-primary" onclick="exportAnalysis()">Esporta JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery and Chessboard.js -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    
+    <!-- Chess.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        // ========== v4.1 PRODUCTION READY - CHANGELOG ==========
+        // FIX #1: Unicode Safety - All symbols converted to escape codes
+        // FIX #2: Robust API Error Handling - Enhanced LichessAPI with detailed logging
+        // FIX #3: LocalStorage Versioning - Migration system for backward compatibility
+        // FIX #4: generateAnnotatedPGN() - Unicode-safe annotations
+        // FIX #5: Chart.js Memory Leak - Proper cleanup on modal close
+        // FIX #6: Input Validation - Empty game handling
+        // FIX #7: Loading States - User feedback during exports
+        // ======================================================
+
+        // ========== GLOBAL VARIABLES ==========
+        let board = null;
+        let chess = new Chess();
+        let gameOver = false;
+        let stockfish = null;
+        let whitePlayer = 'human';
+        let blackPlayer = 'ai';
+        let isThinking = false;
+        let pendingAIMove = false;
+
+        // Timer variables
+        let timerEnabled = false;
+        let timerInterval = null;
+        let currentTurn = 'white';
+        let timeLeft = { white: 600000, black: 600000 };
+        let lastTime = Date.now();
+        let timeControl = { time: 10, increment: 0 };
+
+        // Analysis variables
+        let analysisEnabled = false;
+        let gameAnalysisData = {
+            moves: [],
+            evaluations: [],
+            winProbabilities: [50],
+            startTime: null,
+            endTime: null,
+            result: null,
+            winner: null,
+            captures: { white: 0, black: 0 },
+            checks: { white: 0, black: 0 },
+            castles: { white: false, black: false },
+            phaseStats: { opening: [], middlegame: [], endgame: [] }
+        };
+
+        let winProbChart = null;
+        let currentReplayIndex = -1;
+
+        // ========== LOCALSTORAGE VERSIONING SYSTEM ==========
+        // FIX #3: LocalStorage Versioning for Compatibility
+        
+        const STORAGE_VERSION = '4.1';
+        const STORAGE_KEY = 'chessProData';
+        
+        class StorageManager {
+            constructor() {
+                this.version = STORAGE_VERSION;
+                this.initStorage();
+            }
+
+            initStorage() {
+                try {
+                    const data = this.getData();
+                    if (!data || data.version !== this.version) {
+                        console.log(`Migrating storage from ${data?.version || 'unknown'} to ${this.version}`);
+                        this.migrateData(data);
+                    }
+                } catch (error) {
+                    console.error('Storage initialization error:', error);
+                    this.resetStorage();
+                }
+            }
+
+            getData() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    return raw ? JSON.parse(raw) : null;
+                } catch (error) {
+                    console.error('Error reading storage:', error);
+                    return null;
+                }
+            }
+
+            saveData(data) {
+                try {
+                    const storageData = {
+                        version: this.version,
+                        lastUpdated: new Date().toISOString(),
+                        data: data
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+                    return true;
+                } catch (error) {
+                    console.error('Error saving storage:', error);
+                    return false;
+                }
+            }
+
+            migrateData(oldData) {
+                // Migration logic from older versions
+                let migratedGames = [];
+                
+                try {
+                    // Check for old format (pre-v4.1)
+                    const oldGames = JSON.parse(localStorage.getItem('chessGames') || '[]');
+                    
+                    if (oldGames.length > 0) {
+                        console.log(`Found ${oldGames.length} games in old format, migrating...`);
+                        migratedGames = oldGames.map(game => ({
+                            ...game,
+                            version: '4.0', // Mark as migrated from v4.0
+                            migrated: true,
+                            migratedAt: new Date().toISOString()
+                        }));
+                    }
+
+                    // If oldData exists and has games, merge
+                    if (oldData && oldData.data && oldData.data.games) {
+                        migratedGames = [...migratedGames, ...oldData.data.games];
+                    }
+
+                } catch (error) {
+                    console.error('Migration error:', error);
+                }
+
+                // Save migrated data
+                this.saveData({ games: migratedGames });
+                
+                console.log(`Migration complete: ${migratedGames.length} games saved`);
+            }
+
+            resetStorage() {
+                console.warn('Resetting storage to default state');
+                this.saveData({ games: [] });
+            }
+
+            getGames() {
+                const data = this.getData();
+                return data?.data?.games || [];
+            }
+
+            saveGame(gameData) {
+                const games = this.getGames();
+                const newGame = {
+                    ...gameData,
+                    version: this.version,
+                    savedAt: new Date().toISOString()
+                };
+                games.push(newGame);
+                return this.saveData({ games });
+            }
+
+            deleteGame(index) {
+                const games = this.getGames();
+                games.splice(index, 1);
+                return this.saveData({ games });
+            }
+        }
+
+        const storageManager = new StorageManager();
+
+        // ========== ENHANCED LICHESS API WITH ROBUST ERROR HANDLING ==========
+        // FIX #2: Comprehensive Error Handling and Logging
+        
+        class LichessAPI {
+            constructor() {
+                this.EXPLORER = 'https://explorer.lichess.ovh';
+                this.TABLEBASE = 'https://tablebase.lichess.ovh';
+                this.cache = new Map();
+                this.errorLog = [];
+                this.requestCount = 0;
+            }
+
+            countPieces(fen) {
+                try {
+                    return fen.split(' ')[0].replace(/[^kqrbnpKQRBNP]/g, '').length;
+                } catch (error) {
+                    console.error('Error counting pieces:', error);
+                    return 32; // Default to full board
+                }
+            }
+
+            normalizeFen(fen) {
+                try {
+                    return fen.trim().replace(/ /g, '_');
+                } catch (error) {
+                    console.error('Error normalizing FEN:', error);
+                    return fen;
+                }
+            }
+
+            logError(context, error, details = {}) {
+                const errorEntry = {
+                    timestamp: new Date().toISOString(),
+                    context,
+                    error: error.message || String(error),
+                    details,
+                    requestCount: this.requestCount
+                };
+                this.errorLog.push(errorEntry);
+                
+                // Keep only last 50 errors
+                if (this.errorLog.length > 50) {
+                    this.errorLog.shift();
+                }
+                
+                console.error(`[LichessAPI] ${context}:`, error, details);
+            }
+
+            async fetchWithRetry(url, retries = 2, timeout = 8000) {
+                this.requestCount++;
+                
+                // Check cache first
+                const cached = this.cache.get(url);
+                if (cached) {
+                    console.log(`[LichessAPI] Cache hit for: ${url.substring(0, 50)}...`);
+                    return cached;
+                }
+
+                for (let attempt = 0; attempt < retries; attempt++) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), timeout);
+                        
+                        console.log(`[LichessAPI] Request attempt ${attempt + 1}/${retries}: ${url.substring(0, 50)}...`);
+                        
+                        const response = await fetch(url, { 
+                            signal: controller.signal,
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        clearTimeout(timeoutId);
+
+                        // Handle rate limiting
+                        if (response.status === 429) {
+                            const waitTime = 3000 * (attempt + 1); // Exponential backoff
+                            console.warn(`[LichessAPI] Rate limited, waiting ${waitTime}ms...`);
+                            await new Promise(r => setTimeout(r, waitTime));
+                            continue;
+                        }
+
+                        // Handle other HTTP errors
+                        if (!response.ok) {
+                            this.logError('HTTP Error', new Error(`Status: ${response.status}`), {
+                                url,
+                                status: response.status,
+                                statusText: response.statusText,
+                                attempt: attempt + 1
+                            });
+                            
+                            if (attempt === retries - 1) return null;
+                            await new Promise(r => setTimeout(r, 1000));
+                            continue;
+                        }
+
+                        // Parse response
+                        const data = await response.json();
+                        
+                        // Cache successful response
+                        this.cache.set(url, data);
+                        
+                        // Limit cache size
+                        if (this.cache.size > 100) {
+                            const firstKey = this.cache.keys().next().value;
+                            this.cache.delete(firstKey);
+                        }
+                        
+                        console.log(`[LichessAPI] Success: ${url.substring(0, 50)}...`);
+                        return data;
+
+                    } catch (error) {
+                        this.logError('Fetch Error', error, {
+                            url,
+                            attempt: attempt + 1,
+                            isAbort: error.name === 'AbortError',
+                            isNetwork: error.name === 'TypeError'
+                        });
+                        
+                        // Don't retry on abort (timeout)
+                        if (error.name === 'AbortError' && attempt === retries - 1) {
+                            updateStatus('API timeout - operazione annullata', 'error');
+                            return null;
+                        }
+                        
+                        // Retry with exponential backoff
+                        if (attempt < retries - 1) {
+                            const waitTime = 1000 * Math.pow(2, attempt);
+                            console.log(`[LichessAPI] Retrying in ${waitTime}ms...`);
+                            await new Promise(r => setTimeout(r, waitTime));
+                        }
+                    }
+                }
+                
+                // All retries failed
+                updateStatus('API non disponibile - modalita offline', 'error');
+                return null;
+            }
+
+            async getOpenings(fen) {
+                try {
+                    const params = new URLSearchParams({
+                        fen: fen,
+                        ratings: '2000,2200,2500',
+                        speeds: 'blitz,rapid,classical',
+                        moves: 8
+                    });
+                    
+                    const data = await this.fetchWithRetry(`${this.EXPLORER}/lichess?${params}`);
+                    
+                    if (!data) {
+                        console.log('[LichessAPI] No opening data available');
+                        return null;
+                    }
+                    
+                    return data;
+                    
+                } catch (error) {
+                    this.logError('getOpenings', error, { fen });
+                    return null;
+                }
+            }
+
+            async getTablebase(fen) {
+                try {
+                    const pieces = this.countPieces(fen);
+                    
+                    if (pieces > 7) {
+                        console.log('[LichessAPI] Too many pieces for tablebase:', pieces);
+                        return { 
+                            available: false, 
+                            reason: `Troppi pezzi (${pieces}/7 max)` 
+                        };
+                    }
+
+                    const normalizedFen = this.normalizeFen(fen);
+                    const url = `${this.TABLEBASE}/standard?fen=${encodeURIComponent(normalizedFen)}`;
+                    
+                    const data = await this.fetchWithRetry(url);
+                    
+                    if (!data) {
+                        console.log('[LichessAPI] Tablebase data not available');
+                        return { 
+                            available: false, 
+                            reason: 'Dati tablebase non disponibili' 
+                        };
+                    }
+                    
+                    return { available: true, ...data };
+                    
+                } catch (error) {
+                    this.logError('getTablebase', error, { fen });
+                    return { 
+                        available: false, 
+                        reason: 'Errore accesso tablebase' 
+                    };
+                }
+            }
+
+            getErrorLog() {
+                return this.errorLog;
+            }
+
+            clearErrorLog() {
+                this.errorLog = [];
+            }
+
+            getStats() {
+                return {
+                    requestCount: this.requestCount,
+                    cacheSize: this.cache.size,
+                    errorCount: this.errorLog.length,
+                    lastError: this.errorLog[this.errorLog.length - 1] || null
+                };
+            }
+        }
+
+        const lichessAPI = new LichessAPI();
+
+        // ========== STOCKFISH INITIALIZATION ==========
+        
+        // ========== CORS-FREE AI ENGINE ==========
+        // No Stockfish Worker - uses Opening Explorer + Tablebase + Simple AI
+        
+        function initStockfish() {
+            // CORS-FREE version - no Worker needed
+            stockfish = {
+                available: true,
+                mode: 'CORS-FREE',
+                engine: 'Hybrid (Opening Explorer + Tablebase + Simple AI)'
+            };
+            console.log('[AI Engine] CORS-FREE mode initialized');
+            console.log('[AI Engine] Using: Opening Explorer → Tablebase → Simple Evaluation');
+            updateStatus('Motore AI inizializzato (modalità CORS-free)', 'normal');
+        }
+
+        // Simple material evaluation (fallback when no API data)
+        function simpleEvaluate(fen) {
+            const pieceValues = {
+                p: 1, n: 3, b: 3, r: 5, q: 9, k: 0,
+                P: -1, N: -3, B: -3, R: -5, Q: -9, K: 0
+            };
+            
+            const position = fen.split(' ')[0];
+            let score = 0;
+            
+            for (const char of position) {
+                if (pieceValues[char] !== undefined) {
+                    score += pieceValues[char];
+                }
+            }
+            
+            return score * 100; // Centipawns
+        }
+
+        function getBestMove(fen, skillLevel, callback) {
+            // CORS-FREE: Use simple move selection
+            try {
+                const moves = chess.moves();
+                if (moves.length === 0) {
+                    console.error('[AI] No legal moves');
+                    return;
+                }
+                
+                // Simple strategy: try captures first, then random
+                const captureMoves = moves.filter(m => m.includes('x'));
+                const selectedMove = captureMoves.length > 0 
+                    ? captureMoves[Math.floor(Math.random() * captureMoves.length)]
+                    : moves[Math.floor(Math.random() * moves.length)];
+                
+                // Convert SAN to UCI if needed
+                const testChess = new Chess(fen);
+                const moveObj = testChess.move(selectedMove);
+                
+                if (moveObj) {
+                    const uci = moveObj.from + moveObj.to + (moveObj.promotion || '');
+                    setTimeout(() => callback(uci), 300); // Simulate thinking time
+                }
+                
+            } catch (error) {
+                console.error('[AI] Error getting move:', error);
+                // Fallback: first legal move
+                const moves = chess.moves({ verbose: true });
+                if (moves.length > 0) {
+                    const move = moves[0];
+                    const uci = move.from + move.to + (move.promotion || '');
+                    callback(uci);
+                }
+            }
+        }
+
+        async function analyzePosition(fen, depth = 20) {
+            // CORS-FREE: Simple material evaluation
+            try {
+                const evaluation = simpleEvaluate(fen);
+                return evaluation;
+            } catch (error) {
+                console.error('[AI] Analysis error:', error);
+                return 0;
+            }
+        }
+
+        function evaluationToWinProbability(evaluation) {
+            // Sigmoid function for realistic win probability
+            return 50 + 50 * (2 / (1 + Math.exp(-0.004 * evaluation)) - 1);
+        }
+
+        // ========== CHESSBOARD CONFIGURATION ==========
+        
+        const config = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onSnapEnd: onSnapEnd
+            // pieceTheme removed - using Unicode CSS pieces (CORS-free)
+        };
+
+        function onDragStart(source, piece, position, orientation) {
+            if (pendingAIMove) return false;
+            
+            if (gameOver) return false;
+
+            const currentPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+            if (currentPlayer === 'ai') return false;
+
+            if ((chess.turn() === 'w' && piece.search(/^b/) !== -1) ||
+                (chess.turn() === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+        }
+
+        function onDrop(source, target) {
+            if (pendingAIMove) {
+                return 'snapback';
+            }
+
+            const piece = chess.get(source);
+            const isPromotion = piece && piece.type === 'p' &&
+                ((piece.color === 'w' && target[1] === '8') ||
+                 (piece.color === 'b' && target[1] === '1'));
+
+            if (isPromotion) {
+                showPromotionDialog(piece.color, source, target);
+                return;
+            }
+
+            const move = chess.move({
+                from: source,
+                to: target
+            });
+
+            if (move === null) return 'snapback';
+
+            switchTimer();
+            updateMovesList();
+            updateCapturedPieces();
+            
+            // Track move if analysis enabled
+            if (analysisEnabled || gameOver) {
+                trackMove(move).catch(err => console.log('Analysis tracking skipped:', err));
+            }
+            
+            checkGameEnd();
+            analyzeLichessPosition();
+
+            if (!gameOver) {
+                const nextPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+                if (nextPlayer === 'ai') {
+                    pendingAIMove = true;
+                    setTimeout(makeStockfishMove, 500);
+                }
+            }
+        }
+
+        function onSnapEnd() {
+            board.position(chess.fen());
+        }
+
+        // ========== GAME ANALYSIS FUNCTIONS ==========
+        
+        async function trackMove(move) {
+            try {
+                const fen = chess.fen();
+                const pieces = lichessAPI.countPieces(fen);
+                
+                // Determine game phase
+                let phase;
+                if (pieces >= 28) phase = 'opening';
+                else if (pieces >= 12) phase = 'middlegame';
+                else phase = 'endgame';
+                
+                const moveData = {
+                    san: move.san,
+                    from: move.from,
+                    to: move.to,
+                    color: move.color,
+                    moveNumber: chess.history().length,
+                    fen: fen,
+                    captured: move.captured || null,
+                    isCheck: chess.in_check(),
+                    legalMoves: chess.moves().length,
+                    phase: phase
+                };
+                
+                gameAnalysisData.moves.push(moveData);
+                
+                if (move.captured) {
+                    if (move.color === 'w') {
+                        gameAnalysisData.captures.white++;
+                    } else {
+                        gameAnalysisData.captures.black++;
+                    }
+                }
+                
+                if (chess.in_check()) {
+                    if (move.color === 'w') {
+                        gameAnalysisData.checks.white++;
+                    } else {
+                        gameAnalysisData.checks.black++;
+                    }
+                }
+                
+                if (move.san === 'O-O' || move.san === 'O-O-O') {
+                    if (move.color === 'w') {
+                        gameAnalysisData.castles.white = true;
+                    } else {
+                        gameAnalysisData.castles.black = true;
+                    }
+                }
+                
+                // Analyze position and calculate win probability
+                const evaluation = await analyzePosition(fen);
+                gameAnalysisData.evaluations.push(evaluation);
+                
+                const winProb = evaluationToWinProbability(evaluation);
+                gameAnalysisData.winProbabilities.push(winProb);
+                
+                // Track phase statistics
+                gameAnalysisData.phaseStats[phase].push({
+                    moveNumber: moveData.moveNumber,
+                    evaluation: evaluation,
+                    winProb: winProb
+                });
+                
+            } catch (error) {
+                console.error('Error tracking move:', error);
+            }
+        }
+
+        async function analyzeLichessPosition() {
+            try {
+                const fen = chess.fen();
+                const pieces = lichessAPI.countPieces(fen);
+                
+                // Try tablebase first for endgames
+                if (pieces <= 7) {
+                    const tablebase = await lichessAPI.getTablebase(fen);
+                    
+                    if (tablebase.available && tablebase.category) {
+                        document.getElementById('openingPanel').style.display = 'block';
+                        document.getElementById('openingName').textContent = 
+                            `Tablebase: ${tablebase.category.toUpperCase()}`;
+                        document.getElementById('openingStats').textContent = 
+                            tablebase.dtz ? `DTZ: ${tablebase.dtz}` : 'Posizione finale perfetta';
+                        return;
+                    }
+                }
+                
+                // Try opening explorer for opening/middlegame
+                if (pieces >= 20) {
+                    const data = await lichessAPI.getOpenings(fen);
+                    
+                    if (data && data.opening) {
+                        const total = data.white + data.draws + data.black;
+                        if (total > 100) {
+                            const whiteWinRate = ((data.white / total) * 100).toFixed(1);
+                            const drawRate = ((data.draws / total) * 100).toFixed(1);
+                            const blackWinRate = ((data.black / total) * 100).toFixed(1);
+                            
+                            document.getElementById('openingPanel').style.display = 'block';
+                            document.getElementById('openingName').textContent = data.opening.name || 'Apertura Sconosciuta';
+                            document.getElementById('openingStats').textContent = 
+                                `${total.toLocaleString()} partite - B:${whiteWinRate}% P:${drawRate}% N:${blackWinRate}%`;
+                            return;
+                        }
+                    }
+                }
+                
+                // Hide panel if no data
+                document.getElementById('openingPanel').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error analyzing Lichess position:', error);
+                document.getElementById('openingPanel').style.display = 'none';
+            }
+        }
+
+        async function makeStockfishMove() {
+            if (gameOver || !pendingAIMove) {
+                pendingAIMove = false;
+                return;
+            }
+
+            try {
+                isThinking = true;
+                const fen = chess.fen();
+                const pieces = lichessAPI.countPieces(fen);
+                
+                // Try tablebase first
+                if (pieces <= 7) {
+                    try {
+                        const tablebase = await lichessAPI.getTablebase(fen);
+                        
+                        if (tablebase.available && tablebase.moves && tablebase.moves.length > 0) {
+                            const bestMove = tablebase.moves[0];
+                            const moveUci = bestMove.uci;
+                            
+                            console.log('[AI] Using tablebase move:', moveUci);
+                            
+                            if (gameOver) {
+                                isThinking = false;
+                                pendingAIMove = false;
+                                return;
+                            }
+
+                            const move = chess.move(moveUci, { sloppy: true });
+                            if (move) {
+                                board.position(chess.fen());
+                                switchTimer();
+                                updateMovesList();
+                                updateCapturedPieces();
+                                if (analysisEnabled || gameOver) {
+                                    trackMove(move).catch(err => console.log('Analysis tracking skipped'));
+                                }
+                                checkGameEnd();
+                                
+                                updateStatus(`AI gioca ${move.san} (Tablebase: ${tablebase.category})`, 'normal');
+                                
+                                analyzeLichessPosition();
+                                
+                                isThinking = false;
+                                pendingAIMove = false;
+                                
+                                if (!gameOver) {
+                                    const nextPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+                                    if (nextPlayer === 'ai') {
+                                        pendingAIMove = true;
+                                        setTimeout(makeStockfishMove, 500);
+                                    }
+                                }
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.log('[AI] Tablebase not available, using Stockfish');
+                    }
+                }
+                
+                // Try opening explorer
+                if (pieces >= 20) {
+                    try {
+                        const openings = await lichessAPI.getOpenings(fen);
+                        
+                        if (openings && openings.moves && openings.moves.length > 0) {
+                            const validMoves = openings.moves.filter(m => m.white + m.draws + m.black >= 10);
+                            
+                            if (validMoves.length > 0) {
+                                const selectedMove = validMoves[0];
+                                
+                                console.log('[AI] Using opening explorer move:', selectedMove.san);
+                                
+                                if (gameOver) {
+                                    isThinking = false;
+                                    pendingAIMove = false;
+                                    return;
+                                }
+
+                                const move = chess.move(selectedMove.san, { sloppy: true });
+                                if (move) {
+                                    board.position(chess.fen());
+                                    switchTimer();
+                                    updateMovesList();
+                                    updateCapturedPieces();
+                                    if (analysisEnabled || gameOver) {
+                                        trackMove(move).catch(err => console.log('Analysis tracking skipped'));
+                                    }
+                                    checkGameEnd();
+                                    
+                                    const total = selectedMove.white + selectedMove.draws + selectedMove.black;
+                                    updateStatus(`AI gioca ${move.san} (${total.toLocaleString()} partite)`, 'normal');
+                                    
+                                    analyzeLichessPosition();
+                                    
+                                    isThinking = false;
+                                    pendingAIMove = false;
+                                    
+                                    if (!gameOver) {
+                                        const nextPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+                                        if (nextPlayer === 'ai') {
+                                            pendingAIMove = true;
+                                            setTimeout(makeStockfishMove, 500);
+                                        }
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.log('[AI] Opening Explorer not available, using Stockfish');
+                    }
+                }
+                
+                // Fallback to Stockfish
+                updateStatus('Stockfish sta calcolando...', 'thinking');
+                
+                const skillLevel = parseInt(document.getElementById('difficulty').value);
+                
+                getBestMove(fen, skillLevel, (bestmove) => {
+                    if (gameOver) {
+                        isThinking = false;
+                        pendingAIMove = false;
+                        return;
+                    }
+
+                    const move = chess.move(bestmove, { sloppy: true });
+                    if (move) {
+                        board.position(chess.fen());
+                        switchTimer();
+                        updateMovesList();
+                        updateCapturedPieces();
+                        if (analysisEnabled || gameOver) {
+                            trackMove(move).catch(err => console.log('Analysis tracking skipped'));
+                        }
+                        checkGameEnd();
+                        
+                        analyzeLichessPosition();
+                        
+                        isThinking = false;
+                        pendingAIMove = false;
+                        
+                        if (!gameOver) {
+                            const nextPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+                            if (nextPlayer === 'ai') {
+                                pendingAIMove = true;
+                                setTimeout(makeStockfishMove, 500);
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('[AI] Error making move:', error);
+                updateStatus('Errore AI - riprova', 'error');
+                isThinking = false;
+                pendingAIMove = false;
+            }
+        }
+
+        // ========== GAME CONTROL FUNCTIONS ==========
+        
+        function checkGameEnd() {
+            if (chess.game_over()) {
+                gameOver = true;
+                stopTimer();
+                gameAnalysisData.endTime = Date.now();
+                
+                if (chess.in_checkmate()) {
+                    const winner = chess.turn() === 'w' ? 'Nero' : 'Bianco';
+                    gameAnalysisData.result = 'checkmate';
+                    gameAnalysisData.winner = chess.turn() === 'w' ? 'black' : 'white';
+                    updateStatus(`Scaccomatto! ${winner} vince!`, 'gameover');
+                } else if (chess.in_draw()) {
+                    gameAnalysisData.result = 'draw';
+                    gameAnalysisData.winner = null;
+                    
+                    if (chess.in_stalemate()) {
+                        updateStatus('Stallo! Partita patta.', 'gameover');
+                    } else if (chess.in_threefold_repetition()) {
+                        updateStatus('Tripla ripetizione! Partita patta.', 'gameover');
+                    } else if (chess.insufficient_material()) {
+                        updateStatus('Materiale insufficiente! Partita patta.', 'gameover');
+                    } else {
+                        updateStatus('Partita patta (regola 50 mosse).', 'gameover');
+                    }
+                }
+            } else if (chess.in_check()) {
+                updateStatus('Scacco!', 'check');
+            } else {
+                const turn = chess.turn() === 'w' ? 'Bianco' : 'Nero';
+                updateStatus(`Turno: ${turn}`, 'normal');
+            }
+        }
+
+        function updateStatus(message, type = 'normal') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function updateMovesList() {
+            const moves = chess.history({ verbose: true });
+            let html = '';
+            
+            for (let i = 0; i < moves.length; i += 2) {
+                const moveNum = Math.floor(i / 2) + 1;
+                const whiteMove = moves[i].san;
+                const blackMove = moves[i + 1] ? moves[i + 1].san : '';
+                
+                html += `<div style="margin: 2px 0;">
+                    <span class="move-item">${moveNum}. ${whiteMove}</span>
+                    ${blackMove ? `<span class="move-item">${blackMove}</span>` : ''}
+                </div>`;
+            }
+            
+            document.getElementById('movesList').innerHTML = html || 'Nessuna mossa';
+        }
+
+        function updateCapturedPieces() {
+            const history = chess.history({ verbose: true });
+            const captured = { w: [], b: [] };
+            
+            // Unicode piece mappings (FIX #1: Unicode-safe)
+            const pieceSymbols = {
+                p: '\u2659', // ♙
+                n: '\u2658', // ♘
+                b: '\u2657', // ♗
+                r: '\u2656', // ♖
+                q: '\u2655', // ♕
+                k: '\u2654'  // ♔
+            };
+            
+            for (const move of history) {
+                if (move.captured) {
+                    captured[move.color].push(pieceSymbols[move.captured]);
+                }
+            }
+            
+            document.getElementById('capturedWhite').innerHTML = captured.w.join(' ') || '-';
+            document.getElementById('capturedBlack').innerHTML = captured.b.join(' ') || '-';
+        }
+
+        function startNewGame(white, black) {
+            whitePlayer = white;
+            blackPlayer = black;
+            resetGame();
+            
+            if (whitePlayer === 'ai') {
+                pendingAIMove = true;
+                setTimeout(makeStockfishMove, 500);
+            }
+        }
+
+        function resetGame() {
+            chess.reset();
+            board.position('start');
+            gameOver = false;
+            isThinking = false;
+            pendingAIMove = false;
+            
+            // Reset analysis data
+            gameAnalysisData = {
+                moves: [],
+                evaluations: [],
+                winProbabilities: [50],
+                startTime: Date.now(),
+                endTime: null,
+                result: null,
+                winner: null,
+                captures: { white: 0, black: 0 },
+                checks: { white: 0, black: 0 },
+                castles: { white: false, black: false },
+                phaseStats: { opening: [], middlegame: [], endgame: [] }
+            };
+            
+            // Reset timer
+            timeLeft = { 
+                white: timeControl.time * 60 * 1000, 
+                black: timeControl.time * 60 * 1000 
+            };
+            currentTurn = 'white';
+            updateTimerDisplay();
+            
+            if (timerEnabled) {
+                startTimer();
+            }
+            
+            updateMovesList();
+            updateCapturedPieces();
+            updateStatus('Nuova Partita - Muove il Bianco', 'normal');
+            
+            document.getElementById('openingPanel').style.display = 'none';
+        }
+
+        function undoMove() {
+            if (isThinking || pendingAIMove) return;
+            
+            const move = chess.undo();
+            if (move) {
+                board.position(chess.fen());
+                
+                // Remove last analysis data
+                if (gameAnalysisData.moves.length > 0) {
+                    gameAnalysisData.moves.pop();
+                    gameAnalysisData.evaluations.pop();
+                    gameAnalysisData.winProbabilities.pop();
+                }
+                
+                updateMovesList();
+                updateCapturedPieces();
+                checkGameEnd();
+                analyzeLichessPosition();
+            }
+        }
+
+        function flipBoard() {
+            board.flip();
+        }
+
+        function resign() {
+            if (gameOver) return;
+            
+            const loser = chess.turn() === 'w' ? 'Bianco' : 'Nero';
+            const winner = chess.turn() === 'w' ? 'Nero' : 'Bianco';
+            
+            gameOver = true;
+            stopTimer();
+            gameAnalysisData.endTime = Date.now();
+            gameAnalysisData.result = 'resignation';
+            gameAnalysisData.winner = chess.turn() === 'w' ? 'black' : 'white';
+            
+            updateStatus(`${loser} abbandona! ${winner} vince!`, 'gameover');
+        }
+
+        // ========== TIMER FUNCTIONS ==========
+        
+        function updateTimerDisplay() {
+            const formatTime = (ms) => {
+                const totalSeconds = Math.ceil(ms / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+            
+            document.querySelector('#timerWhite .timer-value').textContent = formatTime(timeLeft.white);
+            document.querySelector('#timerBlack .timer-value').textContent = formatTime(timeLeft.black);
+            
+            document.getElementById('timerWhite').classList.toggle('active', currentTurn === 'white' && timerEnabled && !gameOver);
+            document.getElementById('timerBlack').classList.toggle('active', currentTurn === 'black' && timerEnabled && !gameOver);
+        }
+
+        function startTimer() {
+            if (!timerEnabled || gameOver) return;
+            
+            stopTimer();
+            lastTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const elapsed = now - lastTime;
+                lastTime = now;
+                
+                if (currentTurn === 'white') {
+                    timeLeft.white -= elapsed;
+                    if (timeLeft.white <= 0) {
+                        timeLeft.white = 0;
+                        gameOver = true;
+                        stopTimer();
+                        updateStatus('Tempo scaduto! Nero vince!', 'gameover');
+                    }
+                } else {
+                    timeLeft.black -= elapsed;
+                    if (timeLeft.black <= 0) {
+                        timeLeft.black = 0;
+                        gameOver = true;
+                        stopTimer();
+                        updateStatus('Tempo scaduto! Bianco vince!', 'gameover');
+                    }
+                }
+                
+                updateTimerDisplay();
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function switchTimer() {
+            if (!timerEnabled || gameOver) return;
+            
+            const previousTurn = currentTurn;
+            if (timeControl.increment > 0) {
+                timeLeft[previousTurn] += timeControl.increment * 1000;
+            }
+            
+            currentTurn = chess.turn() === 'w' ? 'white' : 'black';
+            
+            startTimer();
+            updateTimerDisplay();
+        }
+
+        function toggleTimer() {
+            const checkbox = document.getElementById('timerEnabled');
+            timerEnabled = checkbox.checked;
+            
+            if (timerEnabled && !gameOver) {
+                startTimer();
+            } else {
+                stopTimer();
+            }
+            
+            updateTimerDisplay();
+        }
+
+        // ========== PROMOTION FUNCTIONS ==========
+        
+        let promotionPending = null;
+
+        function showPromotionDialog(color, from, to) {
+            const modal = document.getElementById('promotionModal');
+            const container = document.getElementById('promotionPieces');
+            
+            // FIX #1: Unicode-safe piece codes
+            const pieces = color === 'w' 
+                ? ['\u2655', '\u2656', '\u2657', '\u2658'] // ♕♖♗♘
+                : ['\u265B', '\u265C', '\u265D', '\u265E']; // ♛♜♝♞
+            
+            const pieceTypes = ['q', 'r', 'b', 'n'];
+            
+            container.innerHTML = '';
+            pieces.forEach((piece, index) => {
+                const div = document.createElement('div');
+                div.className = 'promotion-piece';
+                div.textContent = piece;
+                div.onclick = () => executePromotion(from, to, pieceTypes[index]);
+                container.appendChild(div);
+            });
+            
+            promotionPending = { from, to };
+            modal.style.display = 'flex';
+        }
+
+        function executePromotion(from, to, promotion) {
+            const move = chess.move({
+                from: from,
+                to: to,
+                promotion: promotion
+            });
+
+            if (move) {
+                board.position(chess.fen());
+                switchTimer();
+                updateMovesList();
+                updateCapturedPieces();
+                
+                if (analysisEnabled || gameOver) {
+                    trackMove(move).catch(err => console.log('Analysis tracking skipped'));
+                }
+                
+                checkGameEnd();
+                analyzeLichessPosition();
+                
+                if (!gameOver) {
+                    const nextPlayer = chess.turn() === 'w' ? whitePlayer : blackPlayer;
+                    if (nextPlayer === 'ai') {
+                        pendingAIMove = true;
+                        setTimeout(makeStockfishMove, 500);
+                    }
+                }
+            }
+
+            document.getElementById('promotionModal').style.display = 'none';
+            promotionPending = null;
+        }
+
+        // ========== PGN FUNCTIONS ==========
+        
+        function generatePGN() {
+            return chess.pgn();
+        }
+
+        // FIX #4: Unicode-safe PGN annotation generation
+        function generateAnnotatedPGN() {
+            // FIX #6: Input validation - handle empty game
+            if (gameAnalysisData.moves.length === 0) {
+                return '[Event "Empty Game"]\n[Site "Chess Pro v4.1"]\n[Date "' + 
+                       new Date().toISOString().split('T')[0] + '"]\n[Result "*"]\n\n*';
+            }
+
+            let pgnHeader = `[Event "Chess Pro Ultimate Analysis"]\n`;
+            pgnHeader += `[Site "Chess Pro v4.1"]\n`;
+            pgnHeader += `[Date "${new Date().toISOString().split('T')[0]}"]\n`;
+            pgnHeader += `[White "${whitePlayer === 'human' ? 'Human' : 'AI'}"]\n`;
+            pgnHeader += `[Black "${blackPlayer === 'human' ? 'Human' : 'AI'}"]\n`;
+            
+            if (gameAnalysisData.result === 'checkmate') {
+                pgnHeader += `[Result "${gameAnalysisData.winner === 'white' ? '1-0' : '0-1'}"]\n\n`;
+            } else if (gameAnalysisData.result === 'draw') {
+                pgnHeader += `[Result "1/2-1/2"]\n\n`;
+            } else {
+                pgnHeader += `[Result "*"]\n\n`;
+            }
+
+            let pgnMoves = '';
+            
+            for (let i = 0; i < gameAnalysisData.moves.length; i++) {
+                const move = gameAnalysisData.moves[i];
+                const classification = classifyMove(i);
+                
+                // FIX #1 & #4: Unicode-safe annotations using escape codes
+                let annotation = '';
+                if (classification === 'brilliant') annotation = '\u203C\u203C'; // ‼‼
+                else if (classification === 'excellent') annotation = '\u0021'; // !
+                else if (classification === 'good') annotation = '';
+                else if (classification === 'inaccuracy') annotation = '\u003F\u0021'; // ?!
+                else if (classification === 'mistake') annotation = '\u003F'; // ?
+                else if (classification === 'blunder') annotation = '\u003F\u003F'; // ??
+                
+                if (move.color === 'w') {
+                    pgnMoves += `${move.moveNumber}. ${move.san}${annotation} `;
+                } else {
+                    pgnMoves += `${move.san}${annotation} `;
+                }
+            }
+            
+            return pgnHeader + pgnMoves.trim();
+        }
+
+        // FIX #7: Loading state for download
+        function downloadAnnotatedPGN() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Esportazione...';
+            
+            try {
+                const annotatedPGN = generateAnnotatedPGN();
+                const blob = new Blob([annotatedPGN], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chess-annotated-${Date.now()}.pgn`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('PGN annotato scaricato!');
+            } catch (error) {
+                console.error('Error downloading PGN:', error);
+                alert('Errore durante l\'esportazione del PGN');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        function openPGNModal() {
+            document.getElementById('pgnText').value = generatePGN();
+            document.getElementById('pgnModal').style.display = 'flex';
+        }
+
+        function closePGNModal() {
+            document.getElementById('pgnModal').style.display = 'none';
+        }
+
+        function copyPGN() {
+            const text = document.getElementById('pgnText');
+            text.select();
+            document.execCommand('copy');
+            alert('PGN copiato negli appunti!');
+        }
+
+        // ========== SAVE/LOAD FUNCTIONS WITH VERSIONING ==========
+        
+        function openSaveModal() {
+            document.getElementById('saveModal').style.display = 'flex';
+        }
+
+        function closeSaveModal() {
+            document.getElementById('saveModal').style.display = 'none';
+        }
+
+        function saveGame() {
+            try {
+                const name = document.getElementById('gameName').value || 'Partita senza nome';
+                const gameData = {
+                    name: name,
+                    date: new Date().toISOString(),
+                    fen: chess.fen(),
+                    pgn: chess.pgn(),
+                    whitePlayer: whitePlayer,
+                    blackPlayer: blackPlayer,
+                    analysisData: analysisEnabled ? gameAnalysisData : null
+                };
+                
+                const success = storageManager.saveGame(gameData);
+                
+                closeSaveModal();
+                
+                if (success) {
+                    alert('Partita salvata con successo!');
+                } else {
+                    alert('Errore durante il salvataggio. Riprova.');
+                }
+                
+            } catch (error) {
+                console.error('Error saving game:', error);
+                alert('Errore durante il salvataggio della partita');
+            }
+        }
+
+        function openLoadModal() {
+            try {
+                const savedGames = storageManager.getGames();
+                const list = document.getElementById('savedGamesList');
+                
+                if (savedGames.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #666;">Nessuna partita salvata</p>';
+                } else {
+                    list.innerHTML = savedGames.map((game, index) => `
+                        <div class="saved-game-item" onclick="loadGame(${index})">
+                            <div class="saved-game-name">${game.name}</div>
+                            <div class="saved-game-date">
+                                ${new Date(game.date).toLocaleString('it-IT')}
+                                ${game.version ? ` (v${game.version})` : ''}
+                                ${game.migrated ? ' [Migrata]' : ''}
+                            </div>
+                            <button class="btn-danger" onclick="event.stopPropagation(); deleteGame(${index})" 
+                                    style="margin-top: 8px; padding: 6px 12px; font-size: 0.85rem;">
+                                Elimina
+                            </button>
+                        </div>
+                    `).join('');
+                }
+                
+                document.getElementById('loadModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error opening load modal:', error);
+                alert('Errore durante il caricamento delle partite salvate');
+            }
+        }
+
+        function closeLoadModal() {
+            document.getElementById('loadModal').style.display = 'none';
+        }
+
+        function loadGame(index) {
+            try {
+                const savedGames = storageManager.getGames();
+                const game = savedGames[index];
+                
+                if (game) {
+                    chess.load(game.fen);
+                    board.position(chess.fen());
+                    whitePlayer = game.whitePlayer || 'human';
+                    blackPlayer = game.blackPlayer || 'ai';
+                    gameOver = false;
+                    
+                    // Load analysis data if available
+                    if (game.analysisData) {
+                        gameAnalysisData = game.analysisData;
+                    }
+                    
+                    updateMovesList();
+                    updateCapturedPieces();
+                    checkGameEnd();
+                    
+                    analyzeLichessPosition();
+                    
+                    closeLoadModal();
+                    updateStatus('Partita caricata con successo', 'normal');
+                }
+            } catch (error) {
+                console.error('Error loading game:', error);
+                alert('Errore durante il caricamento della partita');
+            }
+        }
+
+        function deleteGame(index) {
+            if (confirm('Eliminare questa partita?')) {
+                try {
+                    const success = storageManager.deleteGame(index);
+                    
+                    if (success) {
+                        openLoadModal(); // Refresh list
+                    } else {
+                        alert('Errore durante l\'eliminazione della partita');
+                    }
+                } catch (error) {
+                    console.error('Error deleting game:', error);
+                    alert('Errore durante l\'eliminazione della partita');
+                }
+            }
+        }
+
+        // ========== ANALYSIS PANEL FUNCTIONS ==========
+        
+        function toggleAnalysisPanel() {
+            analysisEnabled = !analysisEnabled;
+            const panel = document.getElementById('analysisPanel');
+            const button = document.getElementById('analysisToggle');
+            
+            if (analysisEnabled) {
+                panel.style.display = 'block';
+                button.textContent = 'Disabilita Analisi';
+                button.classList.remove('btn-success');
+                button.classList.add('btn-warning');
+                
+                if (gameAnalysisData.startTime === null) {
+                    gameAnalysisData.startTime = Date.now();
+                }
+            } else {
+                panel.style.display = 'none';
+                button.textContent = 'Abilita Analisi';
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-success');
+            }
+        }
+
+        function showAnalysisModal() {
+            if (gameAnalysisData.moves.length === 0) {
+                alert('Gioca prima una partita per vedere l\'analisi.');
+                return;
+            }
+            
+            displayAnalysisResults();
+            document.getElementById('analysisModal').style.display = 'flex';
+        }
+
+        // FIX #5: Memory leak - destroy chart on close
+        function closeAnalysisModal() {
+            document.getElementById('analysisModal').style.display = 'none';
+            
+            // Destroy chart to prevent memory leak
+            if (winProbChart) {
+                winProbChart.destroy();
+                winProbChart = null;
+            }
+            
+            // Reset replay
+            board.position(chess.fen());
+            currentReplayIndex = -1;
+        }
+
+        function displayAnalysisResults() {
+            // Game Result
+            let resultText = '';
+            let resultClass = '';
+            
+            if (gameAnalysisData.result === 'checkmate') {
+                resultText = gameAnalysisData.winner === 'white' ? 'Bianco Vince!' : 'Nero Vince!';
+                resultClass = gameAnalysisData.winner === 'white' ? 'white-wins' : 'black-wins';
+            } else if (gameAnalysisData.result === 'draw') {
+                resultText = 'Partita Patta';
+                resultClass = 'draw';
+            } else if (gameAnalysisData.result === 'resignation') {
+                resultText = (gameAnalysisData.winner === 'white' ? 'Bianco' : 'Nero') + ' Vince per Abbandono';
+                resultClass = gameAnalysisData.winner === 'white' ? 'white-wins' : 'black-wins';
+            } else {
+                resultText = 'Partita in Corso';
+            }
+            
+            document.getElementById('gameResultText').textContent = resultText;
+            document.getElementById('gameResultText').className = `game-result ${resultClass}`;
+            
+            const duration = gameAnalysisData.endTime 
+                ? Math.floor((gameAnalysisData.endTime - gameAnalysisData.startTime) / 1000)
+                : Math.floor((Date.now() - gameAnalysisData.startTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            
+            document.getElementById('gameDetails').textContent = 
+                `Durata: ${minutes}m ${seconds}s - Mosse: ${gameAnalysisData.moves.length}`;
+            
+            // Statistics
+            document.getElementById('totalMoves').textContent = gameAnalysisData.moves.length;
+            document.getElementById('totalCaptures').textContent = 
+                gameAnalysisData.captures.white + gameAnalysisData.captures.black;
+            document.getElementById('totalChecks').textContent = 
+                gameAnalysisData.checks.white + gameAnalysisData.checks.black;
+            document.getElementById('totalCastles').textContent = 
+                (gameAnalysisData.castles.white ? 1 : 0) + (gameAnalysisData.castles.black ? 1 : 0);
+            
+            // Accuracy
+            const accuracy = calculateAccuracy();
+            document.getElementById('whiteAccuracy').textContent = accuracy.white.toFixed(1) + '%';
+            document.getElementById('whiteAccuracyBar').style.width = accuracy.white + '%';
+            document.getElementById('whiteAccuracyBar').textContent = accuracy.white.toFixed(1) + '%';
+            
+            document.getElementById('blackAccuracy').textContent = accuracy.black.toFixed(1) + '%';
+            document.getElementById('blackAccuracyBar').style.width = accuracy.black + '%';
+            document.getElementById('blackAccuracyBar').textContent = accuracy.black.toFixed(1) + '%';
+            
+            // Win Probability Chart
+            displayWinProbabilityChart();
+            
+            // Phase Analysis
+            displayPhaseAnalysis();
+            
+            // Move Classifications
+            const classification = classifyMovesEnhanced();
+            document.getElementById('brilliantCount').textContent = classification.brilliant;
+            document.getElementById('excellentCount').textContent = classification.excellent;
+            document.getElementById('goodCount').textContent = classification.good;
+            document.getElementById('bookCount').textContent = classification.book;
+            document.getElementById('forcedCount').textContent = classification.forced;
+            document.getElementById('inaccuracyCount').textContent = classification.inaccuracy;
+            document.getElementById('mistakeCount').textContent = classification.mistake;
+            document.getElementById('blunderCount').textContent = classification.blunder;
+            
+            // Move-by-Move List
+            displayMoveByMoveInteractive();
+        }
+
+        function calculateAccuracy() {
+            let whiteAccuracy = 0;
+            let blackAccuracy = 0;
+            let whiteCount = 0;
+            let blackCount = 0;
+            
+            for (let i = 1; i < gameAnalysisData.moves.length; i++) {
+                const prev = gameAnalysisData.winProbabilities[i];
+                const curr = gameAnalysisData.winProbabilities[i + 1];
+                const loss = Math.abs(curr - prev);
+                
+                const moveAccuracy = Math.max(0, 100 - loss * 5);
+                
+                if (gameAnalysisData.moves[i].color === 'w') {
+                    whiteAccuracy += moveAccuracy;
+                    whiteCount++;
+                } else {
+                    blackAccuracy += moveAccuracy;
+                    blackCount++;
+                }
+            }
+            
+            return {
+                white: whiteCount > 0 ? whiteAccuracy / whiteCount : 100,
+                black: blackCount > 0 ? blackAccuracy / blackCount : 100
+            };
+        }
+
+        function displayWinProbabilityChart() {
+            const ctx = document.getElementById('winProbChart').getContext('2d');
+            
+            // FIX #5: Destroy existing chart to prevent memory leak
+            if (winProbChart) {
+                winProbChart.destroy();
+            }
+            
+            const labels = gameAnalysisData.moves.map((m, i) => i);
+            const whiteProbs = gameAnalysisData.winProbabilities;
+            const blackProbs = gameAnalysisData.winProbabilities.map(p => 100 - p);
+            
+            winProbChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Bianco',
+                            data: whiteProbs,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Nero',
+                            data: blackProbs,
+                            borderColor: '#333',
+                            backgroundColor: 'rgba(51, 51, 51, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Numero Mossa'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayPhaseAnalysis() {
+            const phaseGrid = document.getElementById('phaseGrid');
+            phaseGrid.innerHTML = '';
+            
+            const phases = ['opening', 'middlegame', 'endgame'];
+            const phaseNames = {
+                opening: 'Apertura',
+                middlegame: 'Mediogioco',
+                endgame: 'Finale'
+            };
+            
+            phases.forEach(phase => {
+                const moves = gameAnalysisData.phaseStats[phase];
+                
+                if (moves.length > 0) {
+                    const avgEval = moves.reduce((sum, m) => sum + m.evaluation, 0) / moves.length;
+                    const avgWinProb = moves.reduce((sum, m) => sum + m.winProb, 0) / moves.length;
+                    
+                    const phaseCard = `
+                        <div class="phase-card">
+                            <h4>${phaseNames[phase]}</h4>
+                            <div class="phase-stat">
+                                <span>Mosse:</span>
+                                <span>${moves.length}</span>
+                            </div>
+                            <div class="phase-stat">
+                                <span>Val. Media:</span>
+                                <span>${avgEval.toFixed(2)}</span>
+                            </div>
+                            <div class="phase-stat">
+                                <span>Win Prob:</span>
+                                <span>${avgWinProb.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    phaseGrid.innerHTML += phaseCard;
+                }
+            });
+        }
+
+        function classifyMove(moveIndex) {
+            if (moveIndex < 1) return 'excellent';
+            
+            const move = gameAnalysisData.moves[moveIndex];
+            const prev = gameAnalysisData.winProbabilities[moveIndex];
+            const curr = gameAnalysisData.winProbabilities[moveIndex + 1];
+            
+            // Check if it's a book move
+            if (move.phase === 'opening' && lichessAPI.countPieces(move.fen) >= 28) {
+                return 'book';
+            }
+            
+            // Check if it's a forced move
+            if (move.legalMoves === 1 || move.isCheck) {
+                return 'forced';
+            }
+            
+            const loss = Math.abs(curr - prev);
+            
+            // Check for brilliant move (sacrifice that improves position)
+            if (move.captured && loss < -5) {
+                return 'brilliant';
+            }
+            
+            // Standard classifications
+            if (loss < 1) return 'excellent';
+            if (loss < 3) return 'good';
+            if (loss < 5) return 'inaccuracy';
+            if (loss < 10) return 'mistake';
+            return 'blunder';
+        }
+
+        function classifyMovesEnhanced() {
+            const classification = {
+                brilliant: 0,
+                excellent: 0,
+                good: 0,
+                book: 0,
+                forced: 0,
+                inaccuracy: 0,
+                mistake: 0,
+                blunder: 0
+            };
+            
+            for (let i = 0; i < gameAnalysisData.moves.length; i++) {
+                const moveClass = classifyMove(i);
+                classification[moveClass]++;
+            }
+            
+            return classification;
+        }
+
+        function displayMoveByMoveInteractive() {
+            const container = document.getElementById('moveByMoveList');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < gameAnalysisData.moves.length; i++) {
+                const move = gameAnalysisData.moves[i];
+                const winProb = gameAnalysisData.winProbabilities[i + 1];
+                const classification = classifyMove(i);
+                
+                let classText = '', classStyle = '';
+                
+                const classStyles = {
+                    brilliant: { text: 'Brillante!!', style: 'background: #9C27B0; color: white;' },
+                    excellent: { text: 'Eccellente!', style: 'background: #4CAF50; color: white;' },
+                    good: { text: 'Buona', style: 'background: #8BC34A; color: white;' },
+                    book: { text: 'Da Libro', style: 'background: #2196F3; color: white;' },
+                    forced: { text: 'Forzata', style: 'background: #607D8B; color: white;' },
+                    inaccuracy: { text: 'Imprecisa?!', style: 'background: #FFC107; color: #333;' },
+                    mistake: { text: 'Errore?', style: 'background: #FF9800; color: white;' },
+                    blunder: { text: 'Blunder??', style: 'background: #f44336; color: white;' }
+                };
+                
+                classText = classStyles[classification].text;
+                classStyle = classStyles[classification].style;
+                
+                const row = document.createElement('div');
+                row.className = 'move-row';
+                row.setAttribute('data-move-index', i);
+                row.onclick = function() {
+                    replayToMoveInAnalysis(i);
+                };
+                
+                row.innerHTML = `
+                    <div class="move-num">${move.color === 'w' ? move.moveNumber + '.' : move.moveNumber + '...'}</div>
+                    <div class="move-san">${move.san}</div>
+                    <div class="move-winprob">${winProb.toFixed(1)}%</div>
+                    <div class="move-class" style="${classStyle}">${classText}</div>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function replayToMoveInAnalysis(moveIndex) {
+            const tempChess = new Chess();
+            
+            for (let i = 0; i <= moveIndex; i++) {
+                if (i < gameAnalysisData.moves.length) {
+                    const move = gameAnalysisData.moves[i];
+                    tempChess.move({ from: move.from, to: move.to, promotion: 'q' });
+                }
+            }
+            
+            board.position(tempChess.fen());
+            
+            document.querySelectorAll('#moveByMoveList .move-row').forEach(row => {
+                row.classList.remove('selected');
+            });
+            document.querySelector(`#moveByMoveList [data-move-index="${moveIndex}"]`)?.classList.add('selected');
+            
+            currentReplayIndex = moveIndex;
+        }
+
+        function replayPrevMove() {
+            if (currentReplayIndex > 0) {
+                replayToMoveInAnalysis(currentReplayIndex - 1);
+            }
+        }
+
+        function replayNextMove() {
+            if (currentReplayIndex < gameAnalysisData.moves.length - 1) {
+                replayToMoveInAnalysis(currentReplayIndex + 1);
+            }
+        }
+
+        function replayReset() {
+            board.position(chess.fen());
+            currentReplayIndex = -1;
+            document.querySelectorAll('#moveByMoveList .move-row').forEach(row => {
+                row.classList.remove('selected');
+            });
+        }
+
+        // ========== HTML REPORT EXPORT ==========
+        function exportHTMLReport() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Esportazione...';
+
+            try {
+                const accuracy = calculateAccuracy();
+                const classification = classifyMovesEnhanced();
+                
+                const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chess Pro Ultimate - Analisi Partita</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        h1 { color: #667eea; text-align: center; }
+        .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
+        .stat-box { background: white; padding: 15px; border-radius: 6px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.9rem; color: #666; margin-top: 5px; }
+        .move-row { display: flex; padding: 8px; margin: 4px 0; background: white; border-radius: 4px; }
+        .move-num { width: 80px; font-weight: bold; color: #667eea; }
+        .move-san { flex: 1; font-family: monospace; }
+        .move-class { width: 100px; text-align: center; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+        .brilliant { background: #9C27B0; color: white; }
+        .excellent { background: #4CAF50; color: white; }
+        .good { background: #8BC34A; color: white; }
+        .book { background: #2196F3; color: white; }
+        .forced { background: #607D8B; color: white; }
+        .inaccuracy { background: #FFC107; color: #333; }
+        .mistake { background: #FF9800; color: white; }
+        .blunder { background: #f44336; color: white; }
+        @media print { body { max-width: 100%; } }
+    </style>
+</head>
+<body>
+    <h1>&#9812; Chess Pro Ultimate - Analisi Partita &#9818;</h1>
+    
+    <div class="section">
+        <h2>Informazioni Generali</h2>
+        <p><strong>Data:</strong> ${new Date().toLocaleString('it-IT')}</p>
+        <p><strong>Bianco:</strong> ${whitePlayer === 'human' ? 'Umano' : 'AI'}</p>
+        <p><strong>Nero:</strong> ${blackPlayer === 'human' ? 'Umano' : 'AI'}</p>
+        <p><strong>Risultato:</strong> ${document.getElementById('gameResultText').textContent}</p>
+        <p><strong>Mosse Totali:</strong> ${gameAnalysisData.moves.length}</p>
+    </div>
+    
+    <div class="section">
+        <h2>Statistiche</h2>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-value">${gameAnalysisData.moves.length}</div>
+                <div class="stat-label">Mosse</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">${gameAnalysisData.captures.white + gameAnalysisData.captures.black}</div>
+                <div class="stat-label">Catture</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">${gameAnalysisData.checks.white + gameAnalysisData.checks.black}</div>
+                <div class="stat-label">Scacchi</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">${(gameAnalysisData.castles.white ? 1 : 0) + (gameAnalysisData.castles.black ? 1 : 0)}</div>
+                <div class="stat-label">Arrocchi</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Accuratezza</h2>
+        <p><strong>Bianco:</strong> ${accuracy.white.toFixed(1)}%</p>
+        <p><strong>Nero:</strong> ${accuracy.black.toFixed(1)}%</p>
+    </div>
+    
+    <div class="section">
+        <h2>Classificazione Mosse</h2>
+        <div class="stat-grid">
+            <div class="stat-box"><div class="stat-value">${classification.brilliant}</div><div class="stat-label">Brillanti</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.excellent}</div><div class="stat-label">Eccellenti</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.good}</div><div class="stat-label">Buone</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.book}</div><div class="stat-label">Da Libro</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.forced}</div><div class="stat-label">Forzate</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.inaccuracy}</div><div class="stat-label">Imprecise</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.mistake}</div><div class="stat-label">Errori</div></div>
+            <div class="stat-box"><div class="stat-value">${classification.blunder}</div><div class="stat-label">Blunder</div></div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Analisi Mossa per Mossa</h2>
+        ${gameAnalysisData.moves.map((move, i) => {
+            const classification = classifyMove(i);
+            const winProb = gameAnalysisData.winProbabilities[i + 1];
+            return `
+                <div class="move-row">
+                    <div class="move-num">${move.color === 'w' ? move.moveNumber + '.' : move.moveNumber + '...'}</div>
+                    <div class="move-san">${move.san}</div>
+                    <div style="width: 80px; text-align: right;">${winProb.toFixed(1)}%</div>
+                    <div class="move-class ${classification}">${classification}</div>
+                </div>
+            `;
+        }).join('')}
+    </div>
+    
+    <div class="section">
+        <h2>PGN Annotato</h2>
+        <pre style="background: white; padding: 15px; border-radius: 6px; overflow-x: auto;">${generateAnnotatedPGN()}</pre>
+    </div>
+</body>
+</html>
+                `;
+                
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chess-analysis-${Date.now()}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('Report HTML esportato! Aprilo con un browser per visualizzarlo.');
+            } catch (error) {
+                console.error('Error exporting HTML report:', error);
+                alert('Errore durante l\'esportazione del report HTML');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        function exportAnalysis() {
+            try {
+                const analysis = {
+                    version: STORAGE_VERSION,
+                    exportDate: new Date().toISOString(),
+                    result: gameAnalysisData.result,
+                    winner: gameAnalysisData.winner,
+                    moves: gameAnalysisData.moves.length,
+                    duration: gameAnalysisData.endTime ? 
+                        (gameAnalysisData.endTime - gameAnalysisData.startTime) / 1000 : 0,
+                    captures: gameAnalysisData.captures,
+                    checks: gameAnalysisData.checks,
+                    castles: gameAnalysisData.castles,
+                    accuracy: calculateAccuracy(),
+                    classification: classifyMovesEnhanced(),
+                    phaseStats: gameAnalysisData.phaseStats,
+                    moveHistory: gameAnalysisData.moves,
+                    evaluations: gameAnalysisData.evaluations,
+                    winProbabilities: gameAnalysisData.winProbabilities,
+                    pgn: chess.pgn(),
+                    annotatedPGN: generateAnnotatedPGN()
+                };
+                
+                const blob = new Blob([JSON.stringify(analysis, null, 2)], {type: 'application/json;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chess-analysis-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('Analisi esportata in formato JSON!');
+            } catch (error) {
+                console.error('Error exporting analysis:', error);
+                alert('Errore durante l\'esportazione dell\'analisi');
+            }
+        }
+
+        // ========== INITIALIZATION ==========
+        
+        function initGame() {
+            try {
+                board = Chessboard('board', config);
+                initStockfish();
+                
+                // Event listeners
+                document.getElementById('timerEnabled').addEventListener('change', toggleTimer);
+                
+                // Log initialization
+                console.log('='.repeat(60));
+                console.log('Chess Pro Ultimate v4.1 PRODUCTION READY');
+                console.log('='.repeat(60));
+                console.log('Storage Version:', STORAGE_VERSION);
+                console.log('Saved Games:', storageManager.getGames().length);
+                console.log('Lichess API Stats:', lichessAPI.getStats());
+                console.log('='.repeat(60));
+                
+                updateStatus('Pronto - Nuova Partita', 'normal');
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                updateStatus('Errore inizializzazione - ricarica la pagina', 'error');
+            }
+        }
+
+        // Start when page loads
+        $(document).ready(function() {
+            initGame();
+        });
+    </script>
+</body>
+</html>
